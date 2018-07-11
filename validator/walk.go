@@ -14,7 +14,7 @@ type Events struct {
 	inlineFragment   []func(walker *Walker, parentDef *gqlparser.Definition, inlineFragment *gqlparser.InlineFragment)
 	directive        []func(walker *Walker, parentDef *gqlparser.Definition, directiveDef *gqlparser.DirectiveDefinition, directive *gqlparser.Directive, location gqlparser.DirectiveLocation)
 	directiveList    []func(walker *Walker, parentDef *gqlparser.Definition, directives []gqlparser.Directive, location gqlparser.DirectiveLocation)
-	value            []func(walker *Walker, value gqlparser.Value)
+	value            []func(walker *Walker, valueType gqlparser.Type, def *gqlparser.Definition, value gqlparser.Value)
 }
 
 func (o *Events) OnOperation(f func(walker *Walker, operation *gqlparser.OperationDefinition)) {
@@ -35,7 +35,7 @@ func (o *Events) OnDirective(f func(walker *Walker, parentDef *gqlparser.Definit
 func (o *Events) OnDirectiveList(f func(walker *Walker, parentDef *gqlparser.Definition, directives []gqlparser.Directive, location gqlparser.DirectiveLocation)) {
 	o.directiveList = append(o.directiveList, f)
 }
-func (o *Events) OnValue(f func(walker *Walker, value gqlparser.Value)) {
+func (o *Events) OnValue(f func(walker *Walker, valueType gqlparser.Type, def *gqlparser.Definition, value gqlparser.Value)) {
 	o.value = append(o.value, f)
 }
 
@@ -117,19 +117,35 @@ func (w *Walker) walkDirectives(parentDef *gqlparser.Definition, directives []gq
 	}
 }
 
-func (w *Walker) walkValue(value gqlparser.Value) {
+func (w *Walker) walkValue(valueType gqlparser.Type, value gqlparser.Value) {
+	var def *gqlparser.Definition
+	if valueType != nil {
+		def = w.Schema.Types[valueType.Name()]
+	}
+
 	for _, v := range w.Observers.value {
-		v(w, value)
+		v(w, valueType, def, value)
 	}
 
 	switch value := value.(type) {
 	case gqlparser.ListValue:
+		var newType gqlparser.Type
+		if listType, ok := valueType.(gqlparser.ListType); ok {
+			newType = listType.Type
+		}
 		for _, v := range value {
-			w.walkValue(v)
+			w.walkValue(newType, v)
 		}
 	case gqlparser.ObjectValue:
 		for _, v := range value {
-			w.walkValue(v.Value)
+			var fieldType gqlparser.Type
+			if def != nil {
+				fieldDef := def.Field(v.Name)
+				if fieldDef != nil {
+					fieldType = fieldDef.Type
+				}
+			}
+			w.walkValue(fieldType, v.Value)
 		}
 	}
 }
@@ -157,7 +173,15 @@ func (w *Walker) walkSelection(parentDef *gqlparser.Definition, it gqlparser.Sel
 		}
 
 		for _, arg := range it.Arguments {
-			w.walkValue(arg.Value)
+			var argType gqlparser.Type
+			if def != nil {
+				argDef := def.Arguments.ForName(arg.Name)
+				if argDef != nil {
+					argType = argDef.Type
+				}
+			}
+
+			w.walkValue(argType, arg.Value)
 		}
 
 		for _, sel := range it.SelectionSet {

@@ -49,6 +49,7 @@ func TestSpec(t *testing.T) {
 	t.Run("UniqueInputFieldNames", runSpec(schemas, deviations, "../spec/validation/UniqueInputFieldNames.yml"))
 	t.Run("UniqueOperationNames", runSpec(schemas, deviations, "../spec/validation/UniqueOperationNames.yml"))
 	t.Run("UniqueVariableNames", runSpec(schemas, deviations, "../spec/validation/UniqueVariableNames.yml"))
+	t.Run("ValuesOfCorrectType", runSpec(schemas, deviations, "../spec/validation/ValuesOfCorrectType.yml"))
 }
 
 func runSpec(schemas []*gqlparser.Schema, deviations map[string]*Spec, filename string) func(t *testing.T) {
