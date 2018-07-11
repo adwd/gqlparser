@@ -223,6 +223,7 @@ type Directive struct {
 type Type interface {
 	Name() string
 	String() string
+	IsNullable() bool
 }
 
 func (t NamedType) Name() string   { return string(t) }
@@ -232,6 +233,10 @@ func (t NonNullType) Name() string { return t.Type.Name() }
 func (t NamedType) String() string   { return string(t) }
 func (t ListType) String() string    { return "[" + t.Type.Name() + "]" }
 func (t NonNullType) String() string { return t.Type.Name() + "!" }
+
+func (t NamedType) IsNullable() bool   { return true }
+func (t ListType) IsNullable() bool    { return true }
+func (t NonNullType) IsNullable() bool { return false }
 
 type NamedType string
 

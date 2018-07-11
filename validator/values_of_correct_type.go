@@ -18,7 +18,7 @@ func init() {
 			case gqlparser.Enum:
 				rawVal, err := value.Value(nil)
 				if err != nil {
-					addError(Message("Expected type %s, found %s; %s", valueType.String(), value, err.Error()))
+					addError(Message("Expected type %s, found %s %s.", valueType.String(), value, err.Error()))
 				}
 
 				var possible []string
@@ -39,7 +39,8 @@ func init() {
 			case gqlparser.Scalar:
 				_, err := value.Value(nil)
 				if err != nil {
-					addError(Message("Expected type %s, found %s; %s", valueType.String(), value, err.Error()))
+					fmt.Println(err.Error())
+					addError(Message("Expected type %s, found %s.", valueType.String(), value))
 				}
 
 				if !validateScalar(valueType, value) {
@@ -52,10 +53,14 @@ func init() {
 
 func validateScalar(valueType gqlparser.Type, value gqlparser.Value) bool {
 	switch value.(type) {
+	case gqlparser.NullValue:
+		return valueType.IsNullable()
 	case gqlparser.Variable:
 		return true
-	case gqlparser.IntValue, gqlparser.FloatValue:
-		return valueType.Name() == "Int" || valueType.Name() == "Float"
+	case gqlparser.IntValue:
+		return valueType.Name() == "Int" || valueType.Name() == "Float" || valueType.Name() == "ID"
+	case gqlparser.FloatValue:
+		return valueType.Name() == "Float"
 	case gqlparser.StringValue, gqlparser.BlockValue:
 		return valueType.Name() == "String" || valueType.Name() == "ID"
 	case gqlparser.BooleanValue:
