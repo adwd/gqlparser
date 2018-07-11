@@ -15,6 +15,27 @@ func init() {
 			}
 
 			switch def.Kind {
+			case gqlparser.Enum:
+				rawVal, err := value.Value(nil)
+				if err != nil {
+					addError(Message("Expected type %s, found %s; %s", valueType.String(), value, err.Error()))
+				}
+
+				var possible []string
+				for _, val := range def.Values {
+					possible = append(possible, val.Name)
+				}
+
+				ev, isEnum := value.(gqlparser.EnumValue)
+				if !isEnum || def.EnumValue(string(ev)) == nil {
+					rawValStr := fmt.Sprint(rawVal)
+
+					addError(
+						Message("Expected type %s, found %s.", valueType.String(), value),
+						SuggestListUnquoted("Did you mean the enum value", rawValStr, possible),
+					)
+				}
+
 			case gqlparser.Scalar:
 				_, err := value.Value(nil)
 				if err != nil {
@@ -24,13 +45,6 @@ func init() {
 				if !validateScalar(valueType, value) {
 					addError(Message("Expected type %s, found %s.", valueType.String(), value))
 				}
-			}
-
-			switch value.(type) {
-			case gqlparser.StringValue, gqlparser.IntValue, gqlparser.FloatValue, gqlparser.BooleanValue:
-
-				fmt.Println(value.String())
-				fmt.Println(valueType.String())
 			}
 		})
 	})

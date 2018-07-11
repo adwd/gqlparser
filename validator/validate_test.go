@@ -5,11 +5,13 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"strings"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser"
 	"github.com/vektah/gqlparser/errors"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 type Spec struct {
@@ -84,6 +86,9 @@ func runSpec(schemas []*gqlparser.Schema, deviations map[string]*Spec, filename 
 				for i := range spec.Errors {
 					spec.Errors[i].Locations = nil
 					spec.Errors[i].Rule = spec.Rule
+
+					// remove inconsistent use of ;
+					spec.Errors[i].Message = strings.Replace(spec.Errors[i].Message, "; Did you mean", ". Did you mean", -1)
 				}
 				assert.Equal(t, spec.Errors, finalErrors)
 

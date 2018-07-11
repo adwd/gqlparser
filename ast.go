@@ -174,7 +174,7 @@ func (v ListValue) Value(vars map[Variable]interface{}) (interface{}, error) {
 	return val, nil
 }
 func (v ObjectValue) Value(vars map[Variable]interface{}) (interface{}, error) {
-	var val map[string]interface{}
+	val := map[string]interface{}{}
 	for _, elem := range v {
 		elemVal, err := elem.Value.Value(vars)
 		if err != nil {
@@ -193,7 +193,7 @@ func (v BlockValue) String() string   { return strconv.Quote(string(v)) }
 func (v BooleanValue) String() string { return strconv.FormatBool(bool(v)) }
 func (v NullValue) String() string    { return "null" }
 func (v EnumValue) String() string    { return string(v) }
-func (v ListValue) String() string    { return "[" + v.String() + "]" }
+func (v ListValue) String() string    { return "list" }
 func (v ObjectValue) String() string  { return "object" }
 
 type IntValue string
@@ -288,6 +288,15 @@ func (d *Definition) Field(name string) *FieldDefinition {
 	for _, f := range d.Fields {
 		if f.Name == name {
 			return &f
+		}
+	}
+	return nil
+}
+
+func (d *Definition) EnumValue(name string) *EnumValueDefinition {
+	for _, e := range d.Values {
+		if e.Name == name {
+			return &e
 		}
 	}
 	return nil
